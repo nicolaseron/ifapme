@@ -54,7 +54,7 @@ public class UserServiceImpl implements UserService {
         User userToDelete = this.findById(userId);
         List<Car> userCar = carRepository.findByUserId(userId);
         if (!userCar.isEmpty()) {
-            List<String> plaques = userCar.stream().map(car -> car.getPlaqueNumber()).toList();
+            List<String> plaques = userCar.stream().map(Car::getPlaqueNumber).toList();
             throw new UserHasCarException(userId, plaques);
         }
         if (userToDelete == null) {

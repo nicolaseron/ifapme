@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/airbnb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=nico1512
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+    depends_on:
+      db:
+        condition: service_healthy
+
+    networks:
+      - spring-postgres
+
+  db:
+    image: postgres:17-alpine
+    ports:
+      - "15432:5432"
+    environment:
+      - POSTGRES_DB=airbnb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=nico1512
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - spring-postgres
+
+  liquibase:
+    image: liquibase/liquibase:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./liquibase/changelog:/liquibase/changelog
+    working_dir: /migrations
+    command: >
+      --url=jdbc:postgresql://db:5432/airbnb
+      --username=postgres
+      --password=nico1512
+      --changeLogFile=changelog.xml
+      update
+    networks:
+      - spring-postgres
+
+networks:
+  spring-postgres:
+    driver: bridge
+volumes:
+  postgres_data:
+
+
